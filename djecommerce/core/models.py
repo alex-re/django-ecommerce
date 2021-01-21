@@ -7,7 +7,7 @@ User = get_user_model()
 class Product(models.Model):
     title = models.CharField(max_length=100)
     price = models.IntegerField()
-    slug = models.SlugField()
+    slug = models.SlugField(unique=True)
     description = models.TextField()
     specs = models.JSONField(null=True)
 

@@ -102,3 +102,73 @@ def add_to_cart(request, slug):
             'product': pro_ser_data
         }
         return JsonResponse(data)
+
+
+@login_required
+def remove_from_cart(request, slug):
+    '''
+    completely remove order product from order without considering quantity
+    '''
+    product = get_object_or_404(Product, slug=slug)
+    order_qs = Order.objects.filter(user=request.user, ordered=False)
+    n_orders = order_qs.count()
+    if n_orders == 1:
+        order = order_qs[0]
+        # check if the order product is in the order
+        if order.products.filter(product__slug=product.slug).exists():
+            order_product = OrderProduct.objects.filter(
+                product=product, user=request.user, ordered=False)[0]
+            order.products.remove(order_product)
+            order_product.delete()
+            data = {
+                'message': 'This item was removed from your cart.'
+            }
+            return JsonResponse(data)
+        else:
+            data = {
+                'error': 'This item was not in your cart'
+            }
+            return JsonResponse(data)
+    else:
+        data = {
+            'error': f'Number of your active orders: {n_orders}'
+        }
+        return JsonResponse(data)
+
+
+@login_required
+def remove_single_product_from_cart(request, slug):
+    product = get_object_or_404(Product, slug=slug)
+    order_qs = Order.objects.filter(user=request.user, ordered=False)
+    n_orders = order_qs.count()
+    if n_orders == 1:
+        order = order_qs[0]
+        # check if the order product is in the order
+        if order.products.filter(product__slug=product.slug).exists():
+            order_product = OrderProduct.objects.filter(
+                product=product, user=request.user, ordered=False)[0]
+            if order_product.quantity > 1:
+                order_product.quantity -= 1
+                order_product.save()
+                data = {
+                    'message': f'Product quantity was updated to {order_product.quantity}.'
+                }
+                return JsonResponse(data)
+            else:
+                order.products.remove(order_product)
+                order_product.delete()
+                data = {
+                    'message': 'order_product removed from your order'
+                }
+                return JsonResponse(data)
+        else:
+            data = {
+                'message': 'This item was not in your cart'
+            }
+            return JsonResponse(data)
+    else:
+        data = {
+            'error': f'Number of your active orders: {n_orders}'
+        }
+        return JsonResponse(data)
+
