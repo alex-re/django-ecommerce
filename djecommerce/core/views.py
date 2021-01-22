@@ -1,10 +1,13 @@
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404
-# from django.views.generic import View
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views.generic import View
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
-from .models import Product, OrderProduct, Order
+from django.contrib import messages
+from .models import Product, OrderProduct, Order, Address  # , Receiver
 from .serializers import ProductSerializer, OrderSerializer
+from .forms import CheckoutForm
 
 
 def home(request):
@@ -172,3 +175,87 @@ def remove_single_product_from_cart(request, slug):
         }
         return JsonResponse(data)
 
+
+@method_decorator(login_required, name='get')
+@method_decorator(login_required, name='post')
+class CheckoutView(View):
+    '''
+    TODO: when the user want to recive his order
+    electronic payment
+        discount code
+        electronic payment gateway
+    pay with credit card
+        discount code
+    '''
+    login_required = True
+
+    def get(self, request):
+        try:
+            order = Order.objects.get(user=request.user, ordered=False)
+            form = CheckoutForm()
+            context = {
+                'form': form,
+                'order': order
+            }
+            address_qs = Address.objects.filter(user=request.user)
+            if address_qs.exists():
+                context.update({
+                    'addresses': address_qs
+                })
+            return render(request, "core/checkout.html", context)
+        except Order.DoesNotExist:
+            messages.warning(request, "You do not have an active order")
+            return redirect("core:home")
+
+    def post(self, request):
+        form = CheckoutForm(request.POST)
+        # form.is_valid()
+        # return JsonResponse(form.cleaned_data)
+        try:
+            order = Order.objects.get(user=request.user, ordered=False)
+
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'You do not have an active order'})
+
+        if form.is_valid():
+            # create receiver
+            # receiver_fname = form.cleaned_data['receiver_fname']
+            # receiver_lname = form.cleaned_data['receiver_lname']
+            # receiver_national_code = form.cleaned_data['receiver_national_code']
+            # receiver_phone_number = form.cleaned_data['receiver_phone_number']
+            # receiver = Receiver.objects.create(first_name=receiver_fname, last_name=receiver_lname,
+            #                                    national_code=receiver_national_code, phone_number=receiver_phone_number)
+            # create address with receiver
+
+            if 'address_id' in form.cleaned_data:
+                address = Address.objects.get(id=int(form.cleaned_data['address_id']))
+            else:
+                state = form.cleaned_data['state']
+                city = form.cleaned_data['city']
+                neighbour = form.cleaned_data['neighbour']
+                postal_address = form.cleaned_data['postal_address']
+                plaque = form.cleaned_data['plaque']
+                unit = form.cleaned_data['unit']
+                postal_code = form.cleaned_data['postal_code']
+                rec_fname = form.cleaned_data['receiver_fname']
+                rec_lname = form.cleaned_data['receiver_lname']
+                rec_national_code = form.cleaned_data['receiver_national_code']
+                rec_phone_number = form.cleaned_data['receiver_phone_number']
+                address = Address.objects.create(user=request.user, state=state, city=city, neighbour=neighbour,
+                                                 postal_address=postal_address, plaque=plaque, unit=unit, postal_code=postal_code,
+                                                 rec_fname=rec_fname, rec_lname=rec_lname, rec_national_code=rec_national_code, rec_phone_number=rec_phone_number)
+            # assign the address to the order
+            order.address = address
+            order.save()
+            payment_option = form.cleaned_data['payment_option']
+            if payment_option == "C":
+                # user want to pay with credit card
+                # process the product for transportation
+                return JsonResponse({'message': 'Your order was saved and it will process for transfer.'})
+            elif payment_option == "O":
+                # TODO: shaparak
+                return HttpResponse('shaparak')
+            else:
+                return JsonResponse({'error': 'Invalid payment option selected'})
+        else:
+            return JsonResponse({'error': form.errors, 'form': form.cleaned_data})

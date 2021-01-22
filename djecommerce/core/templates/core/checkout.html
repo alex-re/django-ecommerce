@@ -1,0 +1,93 @@
+{% extends "core/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<main>
+  <div class="container wow fadeIn">
+    <div id="addresses-container">
+      {% if addresses %}
+      <h3>You have field these addresses</h3>
+      {% for address in addresses %}
+      {{ address.postal_address }}
+      <!-- TODO: use last addresses -->
+      <button onclick="setAddress('{{ address.id }}')" class="btn btn-success">Use This Address</button>
+      <hr>
+      {% endfor %}
+      {% endif %}
+    </div>
+    <h2 class="my-5 h2 text-center">Checkout form</h2>
+    <div class="row">
+      <div class="col-md-8 mb-4">
+        <div class="card">
+          <form method="POST" class="card-body">
+            {% csrf_token %}
+            {{ form | crispy }}
+            <input type="checkbox" onchange="imReceiver()" id='imReceiver_id'> I am my own receiver
+            <button class="btn btn-primary btn-lg btn-block" type="submit">Continue to checkout</button>
+          </form>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        {% include "core/order_snippet.html" %}
+      </div>
+    </div>
+  </div>
+</main>
+<!-- <style>
+  body {
+    background-color: #180e45;
+  }
+
+  * {
+    color: wheat;
+  }
+
+  .card-body {
+    background-color: wheat;
+  }
+
+  .card-body * {
+    color: black;
+  }
+</style> -->
+<script>
+  function setAddress(addressID) {
+    address_id = document.querySelector('input[name=address_id]').value = addressID;
+    document.querySelector('#addresses-container').style.display = 'none';
+
+    let toBoHide = ['state', 'city', 'neighbour', 'postal_address', 'plaque', 'unit', 'postal_code'];
+    for (let i = 0; i < toBoHide.length; i++) {
+      document.querySelector(`div#div_id_${toBoHide[i]}`).style.display = 'none';
+      //      try {
+      //        document.querySelector(`input[name=${toBoHide[i]}]`).style.display = 'none';
+      //      } catch (error) {
+      //          //console.log(error)
+      //      }
+      //      try {
+      //        document.querySelector(`select[name=${toBoHide[i]}]`).style.display = 'none';
+      //      } catch (error) {
+      //          //console.log(error)
+      //      }
+
+    }
+  }
+
+  function imReceiver() {
+    let checkBox = document.querySelector('input[type=checkbox]');
+    let receiver_fname = document.querySelector('input[name=receiver_fname]');
+    let receiver_lname = document.querySelector('input[name=receiver_lname]');
+    if (checkBox.checked) {
+      receiver_fname.value = '{{ user.first_name }}';
+      receiver_lname.value = '{{ user.last_name }}';
+      receiver_fname.setAttribute('readonly', '');
+      receiver_lname.setAttribute('readonly', '');
+    } else {
+      receiver_fname.value = '';
+      receiver_lname.value = '';
+      receiver_fname.removeAttribute('readonly');
+      receiver_lname.removeAttribute('readonly');
+    }
+  }
+
+</script>
+{% endblock content %}
