@@ -258,4 +258,4 @@ class CheckoutView(View):
             else:
                 return JsonResponse({'error': 'Invalid payment option selected'})
         else:
-            return JsonResponse({'error': form.errors, 'form': form.cleaned_data})
+            return JsonResponse({'form_errors': form.errors, 'form': form.cleaned_data})
