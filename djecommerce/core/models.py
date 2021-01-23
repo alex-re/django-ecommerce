@@ -36,6 +36,8 @@ class OrderProduct(models.Model):
     ordered = models.BooleanField(default=False)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
+    refund_requested = models.BooleanField(default=False)
+    refund_granted = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.quantity} of {self.product.title}'
@@ -127,3 +129,16 @@ class Coupon(models.Model):
 
     def __str__(self):
         return f'Coupon: {self.code}'
+
+
+class Refund(models.Model):
+    '''
+    Refund.objects.filter(id=1).values('order__user__username')
+    '''
+    order_product = models.ForeignKey(Order, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    reason = models.CharField(max_length=1000)
+    accepted = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Refund: {self.id}"

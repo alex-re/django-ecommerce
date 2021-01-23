@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, OrderProduct, Order, Address, Coupon#, Receiver
+from .models import Product, OrderProduct, Order, Address, Coupon, Refund#, Receiver
 
 
 class ProductAdmin(admin.ModelAdmin):
@@ -13,3 +13,4 @@ admin.site.register(Order)
 admin.site.register(Address)
 # admin.site.register(Receiver)
 admin.site.register(Coupon)
+admin.site.register(Refund)

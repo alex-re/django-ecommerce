@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Product, OrderProduct, Order, Address  # , Receiver
 from .serializers import ProductSerializer, OrderSerializer
-from .forms import CheckoutForm, CouponForm
+from .forms import CheckoutForm, CouponForm, RefundForm
 
 
 def home(request):
@@ -275,10 +275,34 @@ class AddCouponView(View):
             try:
                 order = Order.objects.get(user=request.user, ordered=False)
             except Order.DoesNotExist:
-                return JsonResponse({'error': 'You dont have an active order'})                        
+                return JsonResponse({'error': 'You dont have an active order'})
             order.coupon = coupon
             order.save()
             messages.success(request, 'Coupon added for you.')
             return redirect('core:checkout')
         else:
-            return JsonResponse({'errors':form.errors, 'data':form.cleaned_data})
+            return JsonResponse({'errors': form.errors, 'data': form.cleaned_data})
+
+
+class RequestRefundView(View):
+    def get(self, request):
+        form = RefundForm()
+        context = {
+            'form': form
+        }
+        return render(self.request, "request_refund.html", context)
+
+    def post(self, request):
+        form = RefundForm(request.POST)
+        is_valid, order_product = form.is_valid()
+        if form.is_valid:
+            order_product.refund_requested = True
+            order_product.save()
+
+            quantity = form.cleaned_data['quantity']
+            reason = form.cleaned_data['reason']
+            refund = Refund(order_product=order_product,
+                            quantity=quantity, reason=reason)
+            refund.save()
+        else:
+            return JsonResponse({'errors': form.errors, 'data': form.cleaned_data})

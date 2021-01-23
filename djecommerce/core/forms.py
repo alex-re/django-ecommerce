@@ -1,6 +1,6 @@
 from django import forms
 from .fields import EmptyChoiceField
-from .models import Coupon, STATE_CHIOSES, CITY_CHIOSES, NEIGHBOUR_CHIOSES
+from .models import Coupon, OrderProduct, STATE_CHIOSES, CITY_CHIOSES, NEIGHBOUR_CHIOSES
 
 PAYMENT_CHOICES = (
     ('O', 'Online'),
@@ -66,3 +66,25 @@ class CouponForm(forms.Form):
             self.errors['invalid_coupon'] = 'Coupon does not exist; please enter valid code.'
             return (False, '')
 
+
+class RefundForm(forms.Form):
+    order_product_id = forms.IntegerField()
+    quantity = forms.IntegerField()
+    reason = forms.CharField(widget=forms.Textarea)
+
+    def is_valid(self):
+        is_valid = super(RefundForm, self).is_valid()
+        if not is_valid:
+            return (False, '')
+
+        order_product_id = self.cleaned_data['order_product_id']
+        quantity = self.cleaned_data['quantity']
+        order_product_qs = OrderProduct.objects.filter(id=order_product_id)
+
+        if order_product_qs.exists():
+            order_product = order_product_qs[0]
+            if quantity <= order_product.quantity:
+                return (True, order_product)
+        else:
+            self.errors['invalid_order_product'] = 'Order Product does not exist; please enter valid id.'
+            return (False, '')
