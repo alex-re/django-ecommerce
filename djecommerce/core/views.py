@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .models import Product, OrderProduct, Order, Address  # , Receiver
 from .serializers import ProductSerializer, OrderSerializer
-from .forms import CheckoutForm
+from .forms import CheckoutForm, CouponForm
 
 
 def home(request):
@@ -228,7 +228,8 @@ class CheckoutView(View):
             # create address with receiver
 
             if 'address_id' in form.cleaned_data:
-                address = Address.objects.get(id=int(form.cleaned_data['address_id']))
+                address = Address.objects.get(
+                    id=form.cleaned_data['address_id'])
             else:
                 state = form.cleaned_data['state']
                 city = form.cleaned_data['city']
@@ -258,4 +259,26 @@ class CheckoutView(View):
             else:
                 return JsonResponse({'error': 'Invalid payment option selected'})
         else:
-            return JsonResponse({'form_errors': form.errors, 'form': form.cleaned_data})
+            return JsonResponse({'errors': form.errors, 'data': form.cleaned_data})
+
+
+class AddCouponView(View):
+    def get(self, request):
+        form = CouponForm()
+        context = {'form': form}
+        return render(request, 'core/add_coupon.html', context)
+
+    def post(self, request):
+        form = CouponForm(request.POST)
+        is_valid, coupon = form.is_valid()
+        if is_valid:
+            try:
+                order = Order.objects.get(user=request.user, ordered=False)
+            except Order.DoesNotExist:
+                return JsonResponse({'error': 'You dont have an active order'})                        
+            order.coupon = coupon
+            order.save()
+            messages.success(request, 'Coupon added for you.')
+            return redirect('core:checkout')
+        else:
+            return JsonResponse({'errors':form.errors, 'data':form.cleaned_data})

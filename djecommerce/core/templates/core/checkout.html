@@ -9,7 +9,6 @@
       <h3>You have field these addresses</h3>
       {% for address in addresses %}
       {{ address.postal_address }}
-      <!-- TODO: use last addresses -->
       <button onclick="setAddress('{{ address.id }}')" class="btn btn-success">Use This Address</button>
       <hr>
       {% endfor %}

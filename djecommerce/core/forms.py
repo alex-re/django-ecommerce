@@ -1,6 +1,6 @@
 from django import forms
 from .fields import EmptyChoiceField
-from .models import STATE_CHIOSES, CITY_CHIOSES, NEIGHBOUR_CHIOSES
+from .models import Coupon, STATE_CHIOSES, CITY_CHIOSES, NEIGHBOUR_CHIOSES
 
 PAYMENT_CHOICES = (
     ('O', 'Online'),
@@ -30,7 +30,6 @@ class CheckoutForm(forms.Form):
         max_length=11, help_text='Example: 09123456789')
     address_id = forms.IntegerField(widget=forms.HiddenInput, required=False)
 
-    # TODO:
     def is_valid(self):
         is_valid = super(CheckoutForm, self).is_valid()
         if not is_valid:
@@ -50,3 +49,20 @@ class CheckoutForm(forms.Form):
         if new_add_req and address_id:
             is_valid = False
         return is_valid
+
+
+class CouponForm(forms.Form):
+    code = forms.CharField(max_length=100)
+
+    def is_valid(self):
+        is_valid = super(CouponForm, self).is_valid()
+        if not is_valid:
+            return (False, '')
+        code = self.cleaned_data['code']
+        coupon_qs = Coupon.objects.filter(code=code)
+        if coupon_qs.exists():
+            return (True, coupon_qs[0])
+        else:
+            self.errors['invalid_coupon'] = 'Coupon does not exist; please enter valid code.'
+            return (False, '')
+
