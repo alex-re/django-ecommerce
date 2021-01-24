@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Product, OrderProduct, Order, Address  # , Receiver
+from .models import Product, OrderProduct, Order, Address, Refund  # , Receiver
 from .serializers import ProductSerializer, OrderSerializer
 from .forms import CheckoutForm, CouponForm, RefundForm
 
@@ -238,13 +238,14 @@ class CheckoutView(View):
                 plaque = form.cleaned_data['plaque']
                 unit = form.cleaned_data['unit']
                 postal_code = form.cleaned_data['postal_code']
-                rec_fname = form.cleaned_data['receiver_fname']
-                rec_lname = form.cleaned_data['receiver_lname']
-                rec_national_code = form.cleaned_data['receiver_national_code']
-                rec_phone_number = form.cleaned_data['receiver_phone_number']
-                address = Address.objects.create(user=request.user, state=state, city=city, neighbour=neighbour,
-                                                 postal_address=postal_address, plaque=plaque, unit=unit, postal_code=postal_code,
-                                                 rec_fname=rec_fname, rec_lname=rec_lname, rec_national_code=rec_national_code, rec_phone_number=rec_phone_number)
+                address = Address(user=request.user, state=state, city=city, neighbour=neighbour,
+                                  postal_address=postal_address, plaque=plaque, unit=unit, postal_code=postal_code,)
+            address.rec_fname = form.cleaned_data['receiver_fname']
+            address.rec_lname = form.cleaned_data['receiver_lname']
+            address.rec_national_code = form.cleaned_data['receiver_national_code']
+            address.rec_phone_number = form.cleaned_data['receiver_phone_number']
+            address.save()
+
             # assign the address to the order
             order.address = address
             order.save()
@@ -290,12 +291,14 @@ class RequestRefundView(View):
         context = {
             'form': form
         }
-        return render(self.request, "request_refund.html", context)
+        return render(self.request, "core/request_refund.html", context)
 
     def post(self, request):
         form = RefundForm(request.POST)
         is_valid, order_product = form.is_valid()
-        if form.is_valid:
+        if is_valid:
+            if order_product.user.id != request.user.id:
+                return JsonResponse({'error': 'Its not your order'})
             order_product.refund_requested = True
             order_product.save()
 
@@ -304,5 +307,6 @@ class RequestRefundView(View):
             refund = Refund(order_product=order_product,
                             quantity=quantity, reason=reason)
             refund.save()
+            return JsonResponse({'message': 'Your request successfully saved; and its waiting to be accepted.'})
         else:
             return JsonResponse({'errors': form.errors, 'data': form.cleaned_data})

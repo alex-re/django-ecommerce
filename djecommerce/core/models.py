@@ -135,7 +135,7 @@ class Refund(models.Model):
     '''
     Refund.objects.filter(id=1).values('order__user__username')
     '''
-    order_product = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order_product = models.ForeignKey(OrderProduct, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     reason = models.CharField(max_length=1000)
     accepted = models.BooleanField(default=False)

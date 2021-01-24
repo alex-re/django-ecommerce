@@ -85,6 +85,10 @@ class RefundForm(forms.Form):
             order_product = order_product_qs[0]
             if quantity <= order_product.quantity:
                 return (True, order_product)
+            else:
+                self.errors['invalid_order_product_quantity'] = 'your request for refund is more than order product quantity.'
+                return (False, '')
+
         else:
             self.errors['invalid_order_product'] = 'Order Product does not exist; please enter valid id.'
             return (False, '')
