@@ -24,12 +24,14 @@ def home(request):
 @login_required
 def order_summary(request):
     try:
-        order_serializer = OrderSerializer(
-            Order.objects.get(user=request.user, ordered=False))
-        data = {
-            'order': order_serializer.data,
-        }
-        return JsonResponse(data)
+        # order_serializer = OrderSerializer(
+        #     Order.objects.get(user=request.user, ordered=False))
+        # data = {
+        #     'order': order_serializer.data,
+        # }
+        # return JsonResponse(data)
+        order = Order.objects.get(user=request.user, ordered=False)
+        return render(request, 'core/order_summary.html', {'order': order})
 
     except Order.DoesNotExist:
         data = {
