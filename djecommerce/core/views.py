@@ -229,7 +229,7 @@ class CheckoutView(View):
             #                                    national_code=receiver_national_code, phone_number=receiver_phone_number)
             # create address with receiver
 
-            if 'address_id' in form.cleaned_data:
+            if 'address_id' in form.cleaned_data and form.cleaned_data['address_id']:
                 address = Address.objects.get(
                     id=form.cleaned_data['address_id'])
             else:
