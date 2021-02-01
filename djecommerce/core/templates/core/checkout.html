@@ -4,6 +4,7 @@
 {% block content %}
 <main>
   <div class="container wow fadeIn">
+    <div id="message-container"></div>
     <div id="addresses-container">
       {% if addresses %}
       <h3>You have field these addresses</h3>
@@ -50,6 +51,8 @@
   }
 </style> -->
 <script>
+  document.querySelector('html').style = 'scroll-behavior: smooth;';
+
   function setAddress(addressID) {
     address_id = document.querySelector('input[name=address_id]').value = addressID;
     document.querySelector('#addresses-container').style.display = 'none';
@@ -75,11 +78,20 @@
     let checkBox = document.querySelector('input[type=checkbox]');
     let receiver_fname = document.querySelector('input[name=receiver_fname]');
     let receiver_lname = document.querySelector('input[name=receiver_lname]');
+    let user_lname = '{{ user.first_name }}'
+    let user_fname = '{{ user.last_name }}'
     if (checkBox.checked) {
+      if (user_fname === '' || user_lname === '' ) {
+        window.scrollTo(0, 0);
+        makeAlert('info', "You do not have a full name or surname Please fill them in manually")
+        setTimeout(() => {checkBox.checked = false;}, 1000)
+
+      } else {
       receiver_fname.value = '{{ user.first_name }}';
       receiver_lname.value = '{{ user.last_name }}';
       receiver_fname.setAttribute('readonly', '');
       receiver_lname.setAttribute('readonly', '');
+      }
     } else {
       receiver_fname.value = '';
       receiver_lname.value = '';
@@ -87,6 +99,35 @@
       receiver_lname.removeAttribute('readonly');
     }
   }
+
+  function makeAlert(type, message) {
+    let div = document.querySelector('#message-container');
+    const alertClasses = ['alert', `alert-${type}`, 'alert-dismissible', 'fade', 'show'];
+    div.classList.add(...alertClasses);
+    div.role = 'alert';
+    div.innerText = message;
+
+    let btn = document.createElement('button');
+    btn.type = 'button';
+    btn.classList = 'close';
+    btn.setAttribute('data-dismiss', 'alert');
+    btn.setAttribute('aria-label', 'Close');
+    btn.onclick = () => {
+      if (0 >= div.style.opacity) {
+        clearInterval(btnInterval);
+      }
+      var btnInterval = setInterval(() => {div.style.opacity -= 0.1}, 10)
+    }
+
+
+    let span = document.createElement('span');
+    span.setAttribute('aria-hidden', 'true')
+    span.innerText = 'X';
+
+    btn.appendChild(span);
+    div.appendChild(btn);
+  }
+
 
 </script>
 {% endblock content %}
